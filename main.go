@@ -37,8 +37,12 @@ func run() (err error) {
 	}()
 
 	// Start HTTP server.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	srv := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":"+port,
 		BaseContext:  func(_ net.Listener) context.Context { return ctx },
 		ReadTimeout:  time.Second,
 		WriteTimeout: 10 * time.Second,
