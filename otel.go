@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -44,7 +44,7 @@ func setupOTelSDK(ctx context.Context, serviceName, serviceVersion string) (shut
 	}
 
 	// Setup trace provider.
-	tracerProvider, err := newTraceProvider(res)
+	tracerProvider, err := newTraceProvider(ctx, res)
 	if err != nil {
 		handleErr(err)
 		return
@@ -53,7 +53,7 @@ func setupOTelSDK(ctx context.Context, serviceName, serviceVersion string) (shut
 	otel.SetTracerProvider(tracerProvider)
 
 	// Setup meter provider.
-	meterProvider, err := newMeterProvider(res)
+	meterProvider, err := newMeterProvider(ctx, res)
 	if err != nil {
 		handleErr(err)
 		return
@@ -72,9 +72,8 @@ func newResource(serviceName, serviceVersion string) (*resource.Resource, error)
 		))
 }
 
-func newTraceProvider(res *resource.Resource) (*trace.TracerProvider, error) {
-	traceExporter, err := stdouttrace.New(
-		stdouttrace.WithPrettyPrint())
+func newTraceProvider(ctx context.Context, res *resource.Resource) (*trace.TracerProvider, error) {
+	traceExporter, err := otlptracehttp.New(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +87,8 @@ func newTraceProvider(res *resource.Resource) (*trace.TracerProvider, error) {
 	return traceProvider, nil
 }
 
-func newMeterProvider(res *resource.Resource) (*metric.MeterProvider, error) {
-	metricExporter, err := stdoutmetric.New()
+func newMeterProvider(ctx context.Context, res *resource.Resource) (*metric.MeterProvider, error) {
+	metricExporter, err := otlpmetrichttp.New(ctx)
 	if err != nil {
 		return nil, err
 	}
